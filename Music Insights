@@ -1,0 +1,538 @@
+Improving Music Industry Insights with Data Analysis
+Step into the world of music and data analysis alongside Zoe, the musical data explorer, in our project, "Improving Music Industry Insights with Data Analysis.
+" With SQL as her instrument and the CSV files of albums, artists, record labels, and songs as her sheet music, Zoe embarks on a mission to transform raw data into 
+harmonious insights for the music industry.
+
+In the realm of music, a well-organized database is the key to success, whether you're a record label, artist, or passionate music enthusiast. Zoe's goal is to craft 
+SQL queries that will transform these tables into rich, insightful sources of information, unlocking the potential for informed decision-making in the music world.
+
+The project begins by refining these four CSV files, making them complete and fascinating. Zoe's SQL queries serve as her symphony, orchestrating the transformation 
+of raw data into a harmonious database that resonates with music professionals and aficionados alike.
+
+But this isn't just about data analysis; it's a symphonic journey of discovery. The insights Zoe uncovers will guide record labels, artists, and music enthusiasts, 
+helping them better understand the music industry's rhythms and melodies.
+
+By the end of this project, Zoe doesn't just write queries; she's composed a masterpiece—a database that harmonizes with the music industry's needs.
+
+Join Zoe on this musical adventure, where every SQL query transforms data into melodies of insights. Together, we'll create a symphony that empowers music 
+professionals and enthusiasts, reshaping the landscape of the music industry. The world of music insights awaits—let's embark on this data-driven journey and uncover 
+the hidden treasures that will change the way we experience music forever.
+
+To kickstart our project, we've downloaded all the datasets from the provided links and are ready to manually create the essential tables in our MySQL database. 
+These tables, named "album," "artist," "record_label," and "song," will serve as the foundation for our data analysis, enabling us to unlock valuable insights in 
+the world of music. Let's embark on this data-driven journey and transform raw data into harmonious music industry insights.
+
+
+Task 1: Data Download, Import, and Database Connection
+
+# -- Load the sql extention ----
+%load_ext sql
+# --- Load your mysql db using credentials from the "DB" area ---
+%sql mysql+pymysql://b8fbce5c:Cab#22se@localhost/b8fbce5c
+'Connected: b8fbce5c@b8fbce5c'
+
+
+Task 2: Artists by Record Label
+This task lists all artists for each record label, sorted by artist name. By joining the 'record_label' and 'artist' tables and ordering the results by artist name 
+in ascending order, we provide a clear presentation of artists grouped by their respective record labels.
+
+%%sql
+SELECT artist.name AS Artist_Name, record_label.name AS Record_Label_Name 
+FROM artist JOIN record_label
+On artist.record_label_id = record_label.id
+ORDER BY artist.name
+
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+9 rows affected.
+Artist_Name	Record_Label_Name
+AC/DC	Universal
+Anthrax	Blackened
+Eric Clapton	Warner Bros
+Lynyrd Skynyrd	Universal
+Megadeth	Blackened
+Metallica	Blackened
+The Beatles	Capitol
+Van Halen	Warner Bros
+ZZ Top	Warner Bros
+
+Task 3: Record Labels Without Artists
+This task identifies record labels that have no artists associated with them. By performing a left join between the 'record_label' and 'artist' tables and filtering 
+for record labels with no corresponding artist records, we provide insights into record labels without signed artists.
+
+%%sql
+SELECT record_label.name AS record_labels
+FROM record_label LEFT JOIN artist
+ON record_label.id = artist.record_label_id
+WHERE record_label_id IS NULL;
+ 
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+2 rows affected.
+record_labels
+Elektra
+MCA
+
+
+Task 4: Songs per Artist
+This task involves listing the number of songs per artist in descending order. By joining the 'song,' 'album,' and 'artist' tables, we group the data by artist name 
+and count the songs associated with each artist. The results are sorted in descending order by the number of songs, providing insights into the artists with the most
+extensive song catalogs.
+
+%%sql
+SELECT artist.name AS artist_name, COUNT(song.id) AS number_of_songs
+FROM song JOIN album
+ON song.album_id = album.id
+JOIN artist
+ON album.artist_id = artist.id
+GROUP BY artist.name
+ORDER BY artist.name
+ 
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+9 rows affected.
+artist_name	number_of_songs
+AC/DC	2
+Anthrax	2
+Eric Clapton	4
+Lynyrd Skynyrd	2
+Megadeth	4
+Metallica	6
+The Beatles	13
+Van Halen	2
+ZZ Top	2
+
+Task 5: Artist with the Most Songs
+In this task, we identify the artist who has recorded the highest number of songs. By joining the 'song,' 'album,' and 'artist' tables and grouping the data by 
+artist name, we count the songs associated with each artist. The results are then sorted in descending order by the number of songs, with a limit of 1, providing 
+insights into the artist with the most extensive song catalog.
+
+%%sql
+SELECT artist.name AS artist_name, COUNT(song.id) AS number_of_songs
+FROM song JOIN album
+ON song.album_id = album.id
+JOIN artist
+ON album.artist_id = artist.id
+GROUP BY artist.name
+ORDER BY number_of_songs DESC
+LIMIT 1;
+
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+1 rows affected.
+artist_name	number_of_songs
+The Beatles	13
+
+Task 6: Artist with the Fewest Songs
+In this task, we identify the artist or artists who have recorded the least number of songs. By joining the 'song,' 'album,' and 'artist' tables, we group the data 
+by artist name and count the songs associated with each artist. Using a subquery, we determine the minimum count of songs recorded and match it with the 
+corresponding artist(s). This analysis highlights the artist(s) with the smallest song catalog.
+
+%%sql
+SELECT artist.name AS artist_name, COUNT(song.id) AS number_of_songs
+FROM song JOIN album
+ON song.album_id = album.id
+JOIN artist
+ON album.artist_id = artist.id
+GROUP BY artist.name
+HAVING COUNT(song.ID) = (
+    SELECT COUNT(song.ID) AS Min_Song_Count
+    FROM artist
+    LEFT JOIN album ON artist.id = album.artist_id
+    LEFT JOIN song ON album.id = song.album_id
+    GROUP BY artist.name
+    ORDER BY Min_Song_Count ASC
+    LIMIT 1
+);
+
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+5 rows affected.
+artist_name	number_of_songs
+Anthrax	2
+ZZ Top	2
+Van Halen	2
+Lynyrd Skynyrd	2
+AC/DC	2
+
+Task 7: Number of Artists with Fewest Songs
+This task calculates the number of artists who have recorded the least number of songs. By using subqueries to identify the artists with the smallest song catalogs, 
+we then count the number of such artists, providing insights into the size of this group.
+
+%%sql
+SELECT COUNT(*) AS number_of_artist
+FROM(
+SELECT artist.name AS artist_name, COUNT(song.id) AS number_of_songs
+FROM song 
+    JOIN album ON song.album_id = album.id
+    JOIN artist ON album.artist_id = artist.id
+GROUP BY artist.name
+) AS artistsongcounts
+WHERE number_of_songs = (
+    SELECT MIN(number_of_songs)
+    FROM
+    (
+    SELECT COUNT(song.id) AS number_of_songs
+    FROM artist
+    LEFT JOIN album ON artist.id = album.artist_id
+    LEFT JOIN song ON album.id = song.album_id
+    GROUP BY artist.name
+    ) AS subquery
+);
+
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+1 rows affected.
+number_of_artist
+5
+
+Task 8: Artists with Songs Longer than 5 Minutes
+This task identifies the artists who have recorded songs longer than 5 minutes and provides the number of such songs for each artist. By joining the 'song,' 'album,' 
+and 'artist' tables and filtering songs with durations exceeding 5 minutes, we count the songs and group them by artist. This analysis offers insights into the 
+artists with longer song compositions.
+
+%%sql
+SELECT artist.name AS artist_name, COUNT(song.id) AS number_of_songs
+FROM artist
+JOIN album ON artist.id = album.artist_id
+JOIN song On album.id = song.album_id
+WHERE song.duration > 5
+GROUP BY artist.name;
+ 
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+5 rows affected.
+artist_name	number_of_songs
+Metallica	6
+Megadeth	2
+Anthrax	1
+Lynyrd Skynyrd	1
+The Beatles	2
+
+Task 9: Short Songs by Artist and Album
+This task provides the count of songs that are less than 5 minutes long for each artist and album. By joining the 'song,' 'album,' and 'artist' tables and filtering 
+for songs with durations under 5 minutes, we group the results by artist and album. This analysis offers insights into albums with a significant number of shorter 
+songs, helping to understand song composition in different projects.
+
+%%sql
+SELECT artist.name AS artist_name,album.name AS album_name, song.name AS song, song.duration, COUNT(song.id) AS number_of_songs
+FROM artist
+JOIN album ON artist.id = album.artist_id
+JOIN song ON album.id = song.album_id
+WHERE song.duration < 5
+GROUP BY artist.name, album.name, song.name, song.duration
+ORDER BY artist.name, album.name;
+ 
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+25 rows affected.
+artist_name	album_name	song	duration	number_of_songs
+AC/DC	Greatest Hits	T.N.T	3.35	1
+AC/DC	Greatest Hits	Thunderstruck	4.52	1
+Anthrax	The Greater of 2 Evils	Madhouse	4.26	1
+Eric Clapton	Reptile	Modern Girl	4.49	1
+Eric Clapton	Reptile	Reptile	3.36	1
+Eric Clapton	Riding with the King	Key to the Highway	3.39	1
+Eric Clapton	Riding with the King	Riding with the King	4.23	1
+Lynyrd Skynyrd	All-Time Greatest Hits	Sweet Home Alabama	4.45	1
+Megadeth	Endgame	Dialectic Chaos	2.26	1
+Megadeth	Peace Sells	Peace Sells	4.09	1
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	Being for the Benefit of Mr. Kite!	2.6166	1
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	Fixing a Hole	2.6	1
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	Getting Better	2.8	1
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	Good Morning Good Morning	2.6833	1
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	Lovely Rita	2.7	1
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	Lucy in the Sky with Diamonds	3.4666	1
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	Sgt. Pepper's Lonely Hearts Club Band	2.0333	1
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	Sgt. Pepper's Lonely Hearts Club Band (Reprise)	1.3166	1
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	She's Leaving Home	3.5833	1
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	When I'm Sixty-Four	2.6166	1
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	With a Little Help from My Friends	2.7333	1
+Van Halen	Greatest Hits	Eruption	1.43	1
+Van Halen	Greatest Hits	Hot For Teacher	4.43	1
+ZZ Top	Greatest Hits	Legs	4.32	1
+ZZ Top	Greatest Hits	Sharp Dressed Man	4.15	1
+
+Task 10: Years with Most Songs Recorded
+This task identifies the year or years in which the most songs were recorded. By joining the 'song,' 'album,' and 'artist' tables and grouping the data by the 
+album's release year, we count the number of songs for each year. We then determine the year with the highest song count, providing insights into prolific years for 
+music production.
+
+%%sql
+SELECT album.year AS year, COUNT(song.id) AS number_of_songs
+FROM artist
+JOIN album ON artist.id = album.artist_id
+JOIN song ON album.id = song.album_id
+GROUP BY album.year
+ORDER BY year
+LIMIT 1;
+ 
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+1 rows affected.
+year	number_of_songs
+1967	13
+
+Task 11: Top 5 Longest Recorded Songs
+This task lists the artist, song, and year of the top 5 longest recorded songs. By joining the 'song,' 'album,' and 'artist' tables and sorting the results in 
+descending order of song duration, we present the songs with the longest durations.
+
+%%sql
+SELECT song.name as name_of_song, artist.name AS artist_name, album.name AS album_name, album.year as year, song.duration
+FROM artist
+JOIN album ON artist.id = album.artist_id
+JOIN song ON album.id = song.album_id
+ORDER BY song.duration DESC
+LIMIT 5;
+ 
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+5 rows affected.
+name_of_song	artist_name	album_name	year	duration
+Free Bird	Lynyrd Skynyrd	All-Time Greatest Hits	1975	14.23
+Master of Puppets	Metallica	Master of Puppets	1986	8.35
+One	Metallica	...And Justice For All	1988	7.25
+Blackened	Metallica	...And Justice For All	1988	6.42
+I am the Law	Anthrax	The Greater of 2 Evils	2004	6.03
+
+Task 12: Albums Recorded by Year
+This task counts the number of albums recorded for each year. By analyzing the 'album' table and grouping the data by the year of album recording, we provide an 
+overview of the album production trends over time.
+
+%%sql
+SELECT album.year AS year, COUNT(album.id) AS number_of_albums
+FROM album
+GROUP BY album.year;
+
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+11 rows affected.
+year	number_of_albums
+1988	1
+1991	1
+1986	2
+2009	1
+2004	2
+2001	1
+2000	1
+1992	1
+1975	1
+2003	1
+1967	1
+
+Task 13: Max Albums Recorded per Year
+This task determines the maximum number of recorded albums across all the years. By counting the albums recorded per year and identifying the maximum count, we 
+provide insights into the most prolific year for album production.
+
+%%sql
+SELECT COUNT(album.id) AS max_number_of_albums
+FROM album
+GROUP BY album.year
+ORDER BY max_number_of_albums DESC
+LIMIT 1;
+ 
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+1 rows affected.
+max_number_of_albums
+2
+
+Task 14: Year(s) with Most Albums Recorded
+This task identifies the year or years in which the most (maximum) number of albums were recorded and provides the count of albums for each year. By analyzing the 
+'album' table and grouping the data by the year of album recording, we determine the year(s) with the highest album count, shedding light on peak years for album 
+production.
+
+%%sql
+WITH maxAlbum AS(
+SELECT COUNT(album.id) AS album_recorded
+    FROM album 
+    GROUP BY album.year
+    ORDER BY album_recorded DESC
+    LIMIT 1
+)
+SELECT album.year AS year, COUNT(album.id) AS max_number_of_albums
+FROM album
+GROUP BY album.year
+HAViNG COUNT(album.id) = (SELECT album_recorded FROM maxAlbum)
+ORDER BY album.year;
+ 
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+2 rows affected.
+year	max_number_of_albums
+1986	2
+2004	2
+
+Task 15: Total Song Durations by Artist (Descending Order)
+This task calculates the total duration of all songs recorded by each artist and presents the results in descending order. By joining the 'song,' 'album,' and 
+'artist' tables, we sum the durations of songs for each artist and arrange the data to identify artists with the longest cumulative song durations.
+
+%%sql
+SELECT artist.name as artist_name, SUM(song.duration) AS total_duration
+FROM artist
+JOIN album ON artist.id = album.artist_id
+JOIN song ON album.id = song.album_id
+GROUP BY artist.name;
+ 
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+9 rows affected.
+artist_name	total_duration
+Metallica	37.74
+Megadeth	17.009999999999998
+Anthrax	10.29
+Eric Clapton	15.47
+ZZ Top	8.47
+Van Halen	5.859999999999999
+Lynyrd Skynyrd	18.68
+AC/DC	7.869999999999999
+The Beatles	39.8656
+
+Task 16: Artists and Albums with No Short Songs
+This task identifies the artist and album combinations for which there are no songs less than 5 minutes long. By merging data from the 'artist,' 'album,' and 'song' 
+tables and filtering for songs with durations under 5 minutes, we determine the artist and album pairs without such short songs.
+
+%%sql
+SELECT DISTINCT artist.name as artist_name, album.name AS album_name
+FROM artist
+JOIN album ON artist.id = album.artist_id
+JOIN song ON album.id = song.album_id
+WHERE album.id NOT IN (
+SELECT album.id 
+    FROM album
+    JOIN song ON album.id = song.album_id
+    WHERE song.duration < 5
+);
+ 
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+3 rows affected.
+artist_name	album_name
+Metallica	...And Justice For All
+Metallica	Black Album
+Metallica	Master of Puppets
+
+Task 17: Table of Artists, Albums, and Songs (Ascending Order)
+This task creates a table that includes artist names, album names, songs, and song durations, ordered in ascending order by artist, album, and song. By joining the 
+'artist,' 'album,' and 'song' tables and arranging the results by artist name, album name, and song name in ascending order, we provide an organized presentation of 
+the data.
+
+%%sql
+SELECT artist.name AS artist_name, album.name AS album_name, song.name AS song_name, song.duration
+FROM artist
+JOIN album ON artist.id = album.artist_id
+JOIN song ON album.id = song.album_id
+GROUP BY artist.name, album.name, song.name, song.duration
+ORDER BY artist.name, album.name, song.name;
+ 
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+37 rows affected.
+artist_name	album_name	song_name	duration
+AC/DC	Greatest Hits	T.N.T	3.35
+AC/DC	Greatest Hits	Thunderstruck	4.52
+Anthrax	The Greater of 2 Evils	I am the Law	6.03
+Anthrax	The Greater of 2 Evils	Madhouse	4.26
+Eric Clapton	Reptile	Modern Girl	4.49
+Eric Clapton	Reptile	Reptile	3.36
+Eric Clapton	Riding with the King	Key to the Highway	3.39
+Eric Clapton	Riding with the King	Riding with the King	4.23
+Lynyrd Skynyrd	All-Time Greatest Hits	Free Bird	14.23
+Lynyrd Skynyrd	All-Time Greatest Hits	Sweet Home Alabama	4.45
+Megadeth	Endgame	Dialectic Chaos	2.26
+Megadeth	Endgame	Endgame	5.57
+Megadeth	Peace Sells	Peace Sells	4.09
+Megadeth	Peace Sells	The Conjuring	5.09
+Metallica	...And Justice For All	Blackened	6.42
+Metallica	...And Justice For All	One	7.25
+Metallica	Black Album	Enter Sandman	5.3
+Metallica	Black Album	Sad But True	5.29
+Metallica	Master of Puppets	Battery	5.13
+Metallica	Master of Puppets	Master of Puppets	8.35
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	A Day in the Life	5.65
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	Being for the Benefit of Mr. Kite!	2.6166
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	Fixing a Hole	2.6
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	Getting Better	2.8
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	Good Morning Good Morning	2.6833
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	Lovely Rita	2.7
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	Lucy in the Sky with Diamonds	3.4666
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	Sgt. Pepper's Lonely Hearts Club Band	2.0333
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	Sgt. Pepper's Lonely Hearts Club Band (Reprise)	1.3166
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	She's Leaving Home	3.5833
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	When I'm Sixty-Four	2.6166
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	With a Little Help from My Friends	2.7333
+The Beatles	Sgt. Pepper's Lonely Hearts Club Band	Within You Without You	5.066
+Van Halen	Greatest Hits	Eruption	1.43
+Van Halen	Greatest Hits	Hot For Teacher	4.43
+ZZ Top	Greatest Hits	Legs	4.32
+ZZ Top	Greatest Hits	Sharp Dressed Man	4.15
+
+Task 18: Top 3 Artists with Longest Average Song Duration
+This task lists the top 3 artists with the longest average song durations, presented in descending order with the artist having the longest average duration first. 
+By joining the 'song,' 'album,' and 'artist' tables, we calculate the average song duration for each artist and arrange the results to highlight the artists with the 
+lengthiest average song durations.
+
+%%sql
+SELECT artist.name AS artist_name, AVG(song.duration) AS average_song_duration
+FROM artist 
+JOIN album ON artist.id = album.artist_id
+JOIN song ON album.id = song.album_id
+GROUP BY artist.name
+ORDER BY average_song_duration DESC
+LIMIT 3;
+ 
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+3 rows affected.
+artist_name	average_song_duration
+Lynyrd Skynyrd	9.34
+Metallica	6.29
+Anthrax	5.145
+
+Task 19: Total Length of Beatles' Sgt. Pepper's Album
+This task calculates the total album length for all songs on The Beatles' "Sgt. Pepper's" album in minutes and seconds. By joining the 'album' and 'song' tables and 
+filtering for the album with a name like 'Sgt. Pepper,' we sum the song durations and present the result in minutes and seconds, providing the total length of the 
+album.
+
+%%sql
+SELECT album.name AS album_name, 
+    FLOOR(SUM(song.duration)) AS minutes,
+    ROUND((SUM(song.duration) - FLOOR(SUM(song.duration)))*60) AS seconds
+FROM album
+JOIN song ON album.id = song.album_id
+WHERE album.name LIKE "Sgt. Pepper%"
+GROUP BY album.name;
+ 
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+1 rows affected.
+album_name	minutes	seconds
+Sgt. Pepper's Lonely Hearts Club Band	39.0	52.0
+
+Task 20: Artists Not Releasing Albums in the 1980s and 1990s
+This task identifies artists who did not release albums during the decades of the 1980s and 1990s. By performing a left join between the 'artist' and 'album' tables 
+and filtering for albums released within the specified decades, we select artists for whom no albums were found in this period.
+
+%%sql
+SELECT DISTINCT artist.name AS artist_name
+FROM artist
+JOIN album ON artist.id = album.artist_id
+WHERE artist_id NOT IN(
+SELECT DISTINCT album.artist_id
+FROM album
+WHERE album.year BETWEEN 1980 AND 1990
+);
+ 
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+7 rows affected.
+artist_name
+Anthrax
+Eric Clapton
+ZZ Top
+Van Halen
+Lynyrd Skynyrd
+AC/DC
+The Beatles
+
+Task 21: Artists Releasing Albums in the 1980s and 1990s
+This task identifies artists who released albums during the decades of the 1980s and the 1990s. By performing a left join between the 'artist' and 'album' tables
+and filtering for albums released within this period, we select artists who had albums available in these decades.
+
+%%sql
+SELECT DISTINCT artist.name AS artist_name
+FROM artist
+JOIN album ON artist.id = album.artist_id
+WHERE artist_id IN(
+SELECT DISTINCT album.artist_id
+FROM album
+WHERE album.year BETWEEN 1980 AND 1990
+)
+
+* mysql+pymysql://b8fbce5c:***@localhost/b8fbce5c
+2 rows affected.
+artist_name
+Megadeth
+Metallica  give me the 2 point summary of this for resume
+
